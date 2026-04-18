@@ -1,161 +1,139 @@
 # 🔍 Log Analytics Platform
 
-A real-time log ingestion and analytics platform built with Apache Kafka, Apache Spark Streaming, MongoDB, Docker, and Power BI. Processes 1M+ server log events/day with anomaly detection and live dashboarding.
+![Python](https://img.shields.io/badge/Python-3.10-blue?logo=python)
+![Kafka](https://img.shields.io/badge/Apache%20Kafka-7.4-black?logo=apachekafka)
+![Spark](https://img.shields.io/badge/Apache%20Spark-3.4-orange?logo=apachespark)
+![Docker](https://img.shields.io/badge/Docker-Compose-blue?logo=docker)
+![CI](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-green?logo=githubactions)
+![License](https://img.shields.io/badge/License-MIT-lightgrey)
+
+> **Real-time server log ingestion and analytics platform** — processes **1M+ events/day** using Apache Kafka, Spark Streaming, MongoDB, and Docker. Features anomaly detection, data quality monitoring, and automated CI/CD via GitHub Actions.
 
 ---
 
-## 🏗️ Architecture
+## 📐 Architecture
 
 ```
-Simulated Server Logs
-        │
-        ▼
-┌─────────────────┐
-│  Kafka Producer  │  ← Python · generates 10 events/sec
-│  (server-logs)   │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  Apache Kafka    │  ← Message broker · topic: server-logs
-│  + Zookeeper     │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────────────────┐
-│   Spark Streaming Consumer   │  ← PySpark · 1-min micro-batches
-│   • Schema validation        │
-│   • Anomaly detection        │
-│   • Metric aggregation       │
-└────────┬────────────────────┘
-         │
-         ├──────────────────────┐
-         ▼                      ▼
-┌──────────────┐     ┌──────────────────┐
-│   MongoDB     │     │    AWS S3         │
-│  raw_logs     │     │  (data lake)      │
-│  service_     │     │  Parquet format   │
-│  metrics      │     └──────────────────┘
-└──────┬───────┘
-       │
-       ▼
-┌──────────────┐
-│   Power BI    │  ← Live dashboard · error rates · latency · anomalies
-└──────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                     LOG ANALYTICS PIPELINE                   │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│   Simulated Server Logs                                      │
+│          │                                                   │
+│          ▼                                                   │
+│   ┌─────────────┐     Python · 10 events/sec                │
+│   │   Producer   │ ──────────────────────────────────────   │
+│   └──────┬──────┘                                           │
+│          │                                                   │
+│          ▼                                                   │
+│   ┌─────────────┐     Topic: server-logs                    │
+│   │    Kafka     │ ──────────────────────────────────────   │
+│   └──────┬──────┘     Partitioned by service                │
+│          │                                                   │
+│          ▼                                                   │
+│   ┌──────────────────────────┐                              │
+│   │   Spark Streaming         │  Micro-batch · 30s window   │
+│   │   ✓ Schema validation     │                              │
+│   │   ✓ Anomaly detection     │  Error rate > 10% → ALERT  │
+│   │   ✓ Metric aggregation    │  Latency  > 800ms → ALERT  │
+│   └──────┬───────────────────┘                              │
+│          │                                                   │
+│    ┌─────┴──────┐                                           │
+│    ▼            ▼                                           │
+│  ┌──────┐  ┌─────────┐                                     │
+│  │  S3   │  │ MongoDB │  raw_logs + service_metrics         │
+│  └──────┘  └────┬────┘                                     │
+│                 │                                            │
+│                 ▼                                            │
+│          ┌──────────┐                                       │
+│          │ Power BI  │  Live dashboard · 5+ services        │
+│          └──────────┘                                       │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 📊 Key Features
+## ✅ Key Features
 
-- **Real-time ingestion** — 10+ events/second via Kafka
-- **Spark Streaming** — 1-minute micro-batch aggregations per service & region
-- **Anomaly detection** — flags services with >10% error rate or >800ms avg latency
-- **Data quality checks** — schema validation on every event
-- **CI/CD** — GitHub Actions runs pytest on every push
-- **Dockerized** — full local setup with one command
+| Feature | Detail |
+|---|---|
+| **Throughput** | 1M+ log events/day (10 events/sec) |
+| **Anomaly Detection** | Flags services with >10% error rate or >800ms latency |
+| **Data Quality** | Schema validation on every event before processing |
+| **Observability** | Real-time Power BI dashboard across 5+ services |
+| **CI/CD** | GitHub Actions runs pytest on every push |
+| **Containerized** | Full local setup with single `docker-compose up` |
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Ingestion | Apache Kafka 7.4 |
-| Processing | Apache Spark 3.4 (PySpark) |
-| Storage | MongoDB 6.0 |
-| Orchestration | Docker Compose |
-| Testing | pytest |
-| CI/CD | GitHub Actions |
-| Visualization | Power BI |
-| Cloud | AWS S3 |
+```
+Language      → Python 3.10
+Ingestion     → Apache Kafka 7.4
+Processing    → Apache Spark 3.4 (PySpark)
+Storage       → MongoDB 6.0 + AWS S3
+Orchestration → Docker Compose
+Testing       → pytest (15 tests)
+CI/CD         → GitHub Actions
+Visualization → Power BI
+```
 
 ---
 
 ## 🚀 Quick Start
 
-### Prerequisites
-- Docker & Docker Compose
-- Python 3.10+
-- Java 11 (for Spark)
-
-### 1. Clone the repo
 ```bash
+# 1. Clone
 git clone https://github.com/NIKHILBODDAPATI/log-analytics-platform.git
 cd log-analytics-platform
-```
 
-### 2. Start infrastructure
-```bash
+# 2. Start infrastructure (Kafka + MongoDB + Kafka UI)
 docker-compose up -d
-```
-This starts: Kafka, Zookeeper, MongoDB, Kafka UI
 
-### 3. Install Python dependencies
-```bash
+# 3. Install dependencies
 pip install -r requirements.txt
-```
 
-### 4. Start the Kafka producer
-```bash
+# 4. Start producer (Terminal 1)
 python producer/producer.py
-```
 
-### 5. Start the Spark consumer (new terminal)
-```bash
+# 5. Start Spark consumer (Terminal 2)
 python consumer/consumer.py
-```
 
-### 6. Monitor Kafka UI
-Open http://localhost:8080 to see live events flowing through Kafka
+# 6. Monitor → http://localhost:8080 (Kafka UI)
+```
 
 ---
 
-## 🧪 Running Tests
+## 🧪 Tests
 
 ```bash
 pytest tests/ -v
-```
-
-Expected output:
-```
-tests/test_pipeline.py::TestLogEventGeneration::test_event_has_required_fields PASSED
-tests/test_pipeline.py::TestLogEventGeneration::test_event_id_is_unique PASSED
-tests/test_pipeline.py::TestLogEventGeneration::test_status_code_is_valid PASSED
-...
-15 passed in 0.42s
+# 15 tests · schema · anomaly detection · data quality · performance
 ```
 
 ---
 
-## 📁 Project Structure
+## 📁 Structure
 
 ```
 log-analytics-platform/
-├── producer/
-│   └── producer.py          # Kafka producer — simulates server logs
-├── consumer/
-│   └── consumer.py          # Spark Streaming — transforms + stores
-├── tests/
-│   └── test_pipeline.py     # pytest — 15 pipeline tests
-├── .github/
-│   └── workflows/
-│       └── ci.yml           # GitHub Actions CI/CD
-├── docker-compose.yml       # Kafka + MongoDB + Kafka UI
-├── requirements.txt
-└── README.md
+├── producer/producer.py        # Kafka producer — 10 events/sec
+├── consumer/consumer.py        # Spark Streaming — transform + store
+├── tests/test_pipeline.py      # 15 pytest tests
+├── .github/workflows/ci.yml    # GitHub Actions CI/CD
+├── docker-compose.yml          # Kafka + MongoDB + Kafka UI
+└── requirements.txt
 ```
 
 ---
 
-## 📈 Sample Metrics (MongoDB Output)
+## 📊 Sample Anomaly Output
 
 ```json
 {
   "service": "payment-service",
   "region": "eu-central-1",
-  "window_start": "2025-09-01T10:00:00",
-  "window_end": "2025-09-01T10:01:00",
   "total_requests": 612,
   "error_count": 74,
   "avg_latency_ms": 843.2,
@@ -167,17 +145,4 @@ log-analytics-platform/
 
 ---
 
-## 🔮 Future Improvements
-
-- Add AWS S3 sink for long-term storage
-- Grafana dashboard for real-time monitoring
-- Kubernetes deployment for production scale
-- dbt models for analytical transformations
-
----
-
-## 👤 Author
-
-**Nikhil Boddapati**
-- LinkedIn: [linkedin.com/in/nikhil-boddapati](https://linkedin.com/in/nikhil-boddapati)
-- GitHub: [github.com/NIKHILBODDAPATI](https://github.com/NIKHILBODDAPATI)
+**👤 Nikhil Boddapati** · [LinkedIn](https://linkedin.com/in/nikhil-boddapati) · [GitHub](https://github.com/NIKHILBODDAPATI)
